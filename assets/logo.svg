@@ -1,0 +1,80 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+
+    <linearGradient id="bg" x1="24" y1="16" x2="232" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10242E"/>
+      <stop offset="1" stop-color="#163847"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="62" y1="128" x2="194" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7FF2DA"/>
+      <stop offset="1" stop-color="#FFB454"/>
+    </linearGradient>
+
+    <clipPath id="codeArea">
+      <rect x="30" y="42" width="188" height="170" rx="18"/>
+    </clipPath>
+
+  </defs>
+
+  <!-- outer card -->
+  <rect x="12" y="12" width="232" height="232" rx="52" fill="#09171E"/>
+
+  <!-- main background -->
+  <rect x="18" y="18" width="220" height="220" rx="46" fill="url(#bg)"/>
+
+  <rect x="18" y="18" width="220" height="220" rx="46"
+        stroke="#DFFFF7"
+        stroke-opacity="0.08"
+        stroke-width="2"/>
+
+  <!-- code background -->
+  <g clip-path="url(#codeArea)" opacity="0.18" fill="#A9FFF0">
+
+    <text x="36" y="58" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      auto loc = nav.definition(uri, pos);
+    </text>
+
+    <text x="36" y="72" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      if (loc) editor.jump(*loc);
+    </text>
+
+    <text x="36" y="86" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      clangd.request("definition", payload);
+    </text>
+
+    <text x="36" y="170" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      auto refs = clangd.references(symbol);
+    </text>
+
+    <text x="36" y="184" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      rankAndDedupe(refs, currentFile);
+    </text>
+
+    <text x="36" y="198" font-family="DejaVu Sans Mono, monospace" font-size="8.5">
+      metrics.observe("jump_ms", elapsedMs);
+    </text>
+
+  </g>
+
+  <!-- main title -->
+  <text x="128"
+        y="138"
+        text-anchor="middle"
+        font-family="DejaVu Sans Mono, monospace"
+        font-size="34"
+        font-weight="700"
+        letter-spacing="-1.2"
+        fill="url(#accent)">
+        &lt;OB Jump&gt;
+  </text>
+
+  <!-- underline -->
+  <path d="M64 152H192"
+        stroke="url(#accent)"
+        stroke-width="6"
+        stroke-linecap="round"/>
+
+
+</svg>

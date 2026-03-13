@@ -1,0 +1,12 @@
+[
+  {
+    "directory": "/bmc/jacob/projects/openbmc_jump/samples/minimal-project",
+    "command": "clang++ -std=c++17 -I. -c main.cpp",
+    "file": "main.cpp"
+  },
+  {
+    "directory": "/bmc/jacob/projects/openbmc_jump/samples/minimal-project",
+    "command": "clang++ -std=c++17 -I. -c util.cpp",
+    "file": "util.cpp"
+  }
+]
