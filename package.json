@@ -3,7 +3,15 @@
   "displayName": "OpenBMC Jump",
   "description": "Lightweight OpenBMC C/C++ navigation powered by clangd",
   "version": "0.6.0",
-  "publisher": "local",
+  "publisher": "JacobNov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JacobCodeShow/openbmc-jump.git"
+  },
+  "homepage": "https://github.com/JacobCodeShow/openbmc-jump#readme",
+  "bugs": {
+    "url": "https://github.com/JacobCodeShow/openbmc-jump/issues"
+  },
   "icon": "assets/logo.png",
   "main": "./dist/extension.js",
   "engines": {
@@ -153,6 +161,7 @@
   "scripts": {
     "check": "tsc --noEmit -p ./",
     "compile": "npm run check && node esbuild.mjs",
+    "vscode:prepublish": "npm run compile",
     "watch": "npm run compile",
     "lint": "eslint src --ext ts",
     "package": "vsce package --allow-missing-repository",
