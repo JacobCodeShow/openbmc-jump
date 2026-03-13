@@ -1,5 +1,7 @@
 # OpenBMC Jump
 
+![OpenBMC Jump Logo](assets/logo.png)
+
 面向 OpenBMC 的轻量 C/C++ 代码跳转 VS Code 扩展。
 
 ## 当前能力
