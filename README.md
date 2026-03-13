@@ -1,8 +1,15 @@
-# OpenBMC Jump
+<div align="center">
+	<img src="assets/logo.png" alt="OpenBMC Jump Logo" width="136" />
+	<h1>OpenBMC Jump</h1>
+	<p>
+		<a href="https://github.com/JacobCodeShow/openbmc-jump/actions/workflows/ci.yml">
+			<img src="https://github.com/JacobCodeShow/openbmc-jump/actions/workflows/ci.yml/badge.svg" alt="CI" />
+		</a>
+	</p>
+	<p>面向 OpenBMC 的轻量 C/C++ 代码跳转 VS Code 扩展。</p>
+</div>
 
-![OpenBMC Jump Logo](assets/logo.png)
-
-面向 OpenBMC 的轻量 C/C++ 代码跳转 VS Code 扩展。
+> 项目说明：本项目当前版本由 AI 辅助完成开发与迭代。项目立项背景是，在多人共用服务器的开发场景中，cpptools 的内存占用较高，容易造成整体内存资源紧张。OpenBMC Jump 的目标是提供一个更轻量的 C/C++ 跳转方案，以更好适配共享服务器环境。
 
 ## 当前能力
 - Go To Definition
