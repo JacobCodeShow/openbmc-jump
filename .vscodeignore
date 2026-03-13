@@ -1,0 +1,12 @@
+src/**
+samples/**
+.vscode/**
+plan.md
+design.md
+node_modules/**
+out/**
+dist/**/*.map
+esbuild.mjs
+tsconfig.json
+package-lock.json
+*.tsbuildinfo

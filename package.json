@@ -1,0 +1,182 @@
+{
+  "name": "openbmc-jump",
+  "displayName": "OpenBMC Jump",
+  "description": "Lightweight OpenBMC C/C++ navigation powered by clangd",
+  "version": "0.6.0",
+  "publisher": "local",
+  "icon": "assets/logo.png",
+  "main": "./dist/extension.js",
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:c",
+    "onLanguage:cpp"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "openbmcJump.goToDefinition",
+        "title": "OpenBMC Jump: Go To Definition"
+      },
+      {
+        "command": "openbmcJump.goToDeclaration",
+        "title": "OpenBMC Jump: Go To Declaration"
+      },
+      {
+        "command": "openbmcJump.goToImplementation",
+        "title": "OpenBMC Jump: Go To Implementation"
+      },
+      {
+        "command": "openbmcJump.restartClangd",
+        "title": "OpenBMC Jump: Restart clangd"
+      },
+      {
+        "command": "openbmcJump.findReferences",
+        "title": "OpenBMC Jump: Find References"
+      },
+      {
+        "command": "openbmcJump.showMetrics",
+        "title": "OpenBMC Jump: Show Metrics"
+      },
+      {
+        "command": "openbmcJump.showActiveCompileDb",
+        "title": "OpenBMC Jump: Show Active Compile DB"
+      },
+      {
+        "command": "openbmcJump.selectCompileDb",
+        "title": "OpenBMC Jump: Select Compile DB"
+      },
+      {
+        "command": "openbmcJump.showClangdStatus",
+        "title": "OpenBMC Jump: Show Clangd Status"
+      },
+      {
+        "command": "openbmcJump.diagnoseCurrentFile",
+        "title": "OpenBMC Jump: Diagnose Current File"
+      },
+      {
+        "command": "openbmcJump.analyzeCoreDump",
+        "title": "OpenBMC Jump: Analyze Core Dump"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "openbmcJump.analyzeCoreDump",
+          "when": "explorerResourceIsFolder == false && resourceScheme == file && resourceFilename =~ /(^core$|^core\\..*|.*\\.core$)/",
+          "group": "navigation@50"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "openbmcJump.analyzeCoreDump",
+          "when": "resourceScheme == file && resourceFilename =~ /(^core$|^core\\..*|.*\\.core$)/",
+          "group": "navigation@50"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "OpenBMC Jump",
+      "properties": {
+        "openbmcJump.clangd.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom clangd binary path. Leave empty to use PATH."
+        },
+        "openbmcJump.clangd.queryDriver": {
+          "type": "string",
+          "default": "",
+          "description": "Glob pattern(s) passed to clangd --query-driver for cross-compilation. Leave empty to auto-detect from compile_commands.json (OpenBMC recipe-sysroot-native). Example: /opt/arm-toolchain/bin/arm-*"
+        },
+        "openbmcJump.compileCommands.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom compile_commands.json path. Leave empty for auto-detect."
+        },
+        "openbmcJump.compileCommands.searchRoots": {
+          "type": "array",
+          "default": [
+            "build",
+            "tmp"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional root folders to scan for compile_commands.json, useful for OpenBMC build trees."
+        },
+        "openbmcJump.compileCommands.maxSearchDepth": {
+          "type": "number",
+          "default": 6,
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Maximum recursive depth used when scanning compile_commands.json in configured search roots."
+        },
+        "openbmcJump.compileCommands.autoSwitchByFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically switch compile_commands.json when the current file belongs to a different package or recipe."
+        },
+        "openbmcJump.compileCommands.externalSearchRoots": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional absolute or workspace-relative roots to search compile_commands.json outside the current source workspace."
+        },
+        "openbmcJump.requestTimeoutMs": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 500,
+          "maximum": 60000,
+          "description": "Timeout for navigation requests in milliseconds. OpenBMC first-hit parsing may need a higher value."
+        },
+        "openbmcJump.autoRestart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto restart clangd when it unexpectedly stops."
+        },
+        "openbmcJump.autoRestartDelayMs": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 500,
+          "maximum": 30000,
+          "description": "Delay before auto restarting clangd."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p ./",
+    "compile": "npm run check && node esbuild.mjs",
+    "watch": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package --allow-missing-repository",
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": [
+    "c",
+    "cpp",
+    "clangd",
+    "navigation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "@types/vscode": "^1.110.0",
+    "@vscode/vsce": "^3.6.2",
+    "esbuild": "^0.25.0",
+    "eslint": "^10.0.3",
+    "typescript": "^5.9.3",
+    "vscode-test": "^1.6.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}
