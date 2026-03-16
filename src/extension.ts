@@ -146,9 +146,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(vscode.commands.registerCommand("openbmcJump.showClangdStatus", () => {
       const status = manager.getStatusSnapshot();
+      const version = manager.getVersionSnapshot();
       const lines = [
         `clientState: ${status.clientState}`,
         `clangdPath: ${status.clangdPath}`,
+        `clangdResolvedPath: ${version.resolvedPath ?? "<not found>"}`,
+        `clangdVersion: ${version.versionLine ?? "<unknown>"}`,
         `compileCommandsPath: ${status.compileCommandsPath ?? "<not found>"}`,
         `compileCommandsIssue: ${status.compileCommandsIssue ?? "<none>"}`,
         `failureStreak: ${status.failureStreak}`,
@@ -161,8 +164,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
 
       void vscode.window.showInformationMessage(
-        `Clangd status: ${status.clientState}, compile DB: ${status.compileCommandsPath ?? "not found"}`
+        `Clangd status: ${status.clientState}, version: ${version.versionLine ?? "unknown"}`
       );
+      runtimeOutput.show(true);
+    }));
+
+  context.subscriptions.push(vscode.commands.registerCommand("openbmcJump.showClangdVersion", () => {
+      const snapshot = manager.getVersionSnapshot();
+      const lines = [
+        `source: ${snapshot.source}`,
+        `configuredPath: ${snapshot.configuredPath ?? "<empty>"}`,
+        `resolvedPath: ${snapshot.resolvedPath ?? "<not found>"}`,
+        `version: ${snapshot.versionLine ?? "<unknown>"}`
+      ];
+
+      for (const line of lines) {
+        runtimeOutput.appendLine(`[clangd-version] ${line}`);
+      }
+
+      const summary = snapshot.versionLine
+        ? `clangd: ${snapshot.versionLine}`
+        : `clangd path: ${snapshot.resolvedPath ?? "not found"}`;
+      void vscode.window.showInformationMessage(summary);
       runtimeOutput.show(true);
     }));
 
