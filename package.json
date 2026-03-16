@@ -2,7 +2,7 @@
   "name": "openbmc-jump",
   "displayName": "OpenBMC Jump",
   "description": "Lightweight OpenBMC C/C++ navigation powered by clangd",
-  "version": "0.6.0",
+  "version": "0.6.4",
   "publisher": "JacobNov",
   "repository": {
     "type": "git",
@@ -61,6 +61,10 @@
       {
         "command": "openbmcJump.showClangdStatus",
         "title": "OpenBMC Jump: Show Clangd Status"
+      },
+      {
+        "command": "openbmcJump.showClangdVersion",
+        "title": "OpenBMC Jump: Show Clangd Version"
       },
       {
         "command": "openbmcJump.diagnoseCurrentFile",
