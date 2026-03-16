@@ -2,7 +2,7 @@
   "name": "openbmc-jump",
   "displayName": "OpenBMC Jump",
   "description": "Lightweight OpenBMC C/C++ navigation powered by clangd",
-  "version": "0.6.4",
+  "version": "0.6.6",
   "publisher": "JacobNov",
   "repository": {
     "type": "git",
@@ -49,6 +49,10 @@
       {
         "command": "openbmcJump.showMetrics",
         "title": "OpenBMC Jump: Show Metrics"
+      },
+      {
+        "command": "openbmcJump.toggleDebugLogging",
+        "title": "OpenBMC Jump: Toggle Debug Logging"
       },
       {
         "command": "openbmcJump.showActiveCompileDb",
@@ -146,6 +150,11 @@
           "minimum": 500,
           "maximum": 60000,
           "description": "Timeout for navigation requests in milliseconds. OpenBMC first-hit parsing may need a higher value."
+        },
+        "openbmcJump.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose debug logging in OpenBMC Jump output channels. Warnings and errors are still shown when disabled."
         },
         "openbmcJump.autoRestart": {
           "type": "boolean",
