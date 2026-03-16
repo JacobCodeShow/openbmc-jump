@@ -341,10 +341,10 @@ class ClangdOutputChannel implements vscode.OutputChannel {
     this.channel.appendLine(line);
     const clangdLocation = describeCurrentClangdLocation();
     this.channel.appendLine(
-      `[warn] detected clangd/.clang-format compatibility issue. Current clangd: ${clangdLocation}. Recommend using clangd 17 or newer via openbmcJump.clangd.path.`
+      `[warn] detected clangd/.clang-format compatibility issue. Current clangd: ${clangdLocation}. Recommend using clangd 17 or newer via openbmcJump.clangd.path. After installation or configuration is complete, restart clangd.`
     );
     void vscode.window.showWarningMessage(
-      `检测到 clangd 与项目 .clang-format 版本不兼容。当前 clangd: ${clangdLocation}。建议改用 clangd 17 或更新版本。`
+      `检测到 clangd 与项目 .clang-format 版本不兼容。当前 clangd: ${clangdLocation}。建议使用 clangd 17 或更高版本；安装或配置完成后，请重启 clangd。`
     );
   }
 
@@ -514,7 +514,7 @@ export class ClangdManager {
 
     const binaryValidation = validateClangdBinary(clangdPath);
     if (binaryValidation.error) {
-      throw new Error(`${binaryValidation.error}. Please configure openbmcJump.clangd.path to a clangd executable, for example: /bmc/jacob/.install/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin/clangd`);
+      throw new Error(`${binaryValidation.error}. Please configure openbmcJump.clangd.path to a clangd executable. Recommend using clangd 17 or newer, for example: ~/.install/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04/bin/clangd. After installation or configuration is complete, restart clangd.`);
     }
 
     const compileDb = resolveCompileDb();
