@@ -2,7 +2,7 @@
   "name": "openbmc-jump",
   "displayName": "OpenBMC Jump",
   "description": "Lightweight OpenBMC C/C++ navigation powered by clangd",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "publisher": "JacobNov",
   "repository": {
     "type": "git",
@@ -155,6 +155,48 @@
           "type": "boolean",
           "default": false,
           "description": "Enable verbose debug logging in OpenBMC Jump output channels. Warnings and errors are still shown when disabled."
+        },
+        "openbmcJump.clangd.lowMemoryMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reduce clangd memory usage by enabling malloc trimming, storing PCH on disk, and lowering background index priority."
+        },
+        "openbmcJump.clangd.backgroundIndex": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable clangd background project indexing. Turning this off usually reduces memory usage significantly, but global navigation may become slower or less complete until files are opened."
+        },
+        "openbmcJump.clangd.workerCount": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Limit clangd async worker count. 0 uses clangd defaults, but falls back to 1 automatically when low memory mode is enabled. Smaller values usually reduce memory usage."
+        },
+        "openbmcJump.inlayHints.showVariableTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show clangd inlay hints for deduced variable types."
+        },
+        "openbmcJump.inlayHints.showReturnTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show clangd inlay hints for deduced return types."
+        },
+        "openbmcJump.inlayHints.showParameterNames": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show clangd parameter hints at call sites."
+        },
+        "openbmcJump.inlayHints.showOtherTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show other clangd type inlay hints that are not recognized as variable or return type hints."
+        },
+        "openbmcJump.inlayHints.showOtherHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show other clangd inlay hints outside parameter and type hint categories."
         },
         "openbmcJump.autoRestart": {
           "type": "boolean",
