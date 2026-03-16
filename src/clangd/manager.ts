@@ -260,6 +260,10 @@ interface ClangdBinaryValidationResult {
   error?: string;
 }
 
+function isDebugLoggingEnabled(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("debugLogging", false);
+}
+
 class ClangdOutputChannel implements vscode.OutputChannel {
   public readonly name: string;
   private pendingLine = "";
@@ -320,6 +324,10 @@ class ClangdOutputChannel implements vscode.OutputChannel {
   }
 
   private writeLine(line: string): void {
+    if (!this.shouldWriteLine(line)) {
+      return;
+    }
+
     if (!ClangdOutputChannel.FORMAT_COMPATIBILITY_PATTERN.test(line)) {
       this.channel.appendLine(line);
       return;
@@ -338,6 +346,22 @@ class ClangdOutputChannel implements vscode.OutputChannel {
     void vscode.window.showWarningMessage(
       `检测到 clangd 与项目 .clang-format 版本不兼容。当前 clangd: ${clangdLocation}。建议改用 clangd 17 或更新版本。`
     );
+  }
+
+  private shouldWriteLine(line: string): boolean {
+    if (/^\[(warn|error)\]/.test(line)) {
+      return true;
+    }
+
+    if (/^\[(info|state)\]/.test(line)) {
+      return isDebugLoggingEnabled();
+    }
+
+    if (/^[IV]\[/.test(line)) {
+      return isDebugLoggingEnabled();
+    }
+
+    return true;
   }
 }
 
@@ -437,6 +461,22 @@ function validateClangdBinary(clangdPath: string): ClangdBinaryValidationResult 
   };
 }
 
+function buildServerEnvPath(clangdPath: string, extraPaths: string[]): string | undefined {
+  const pathEntries: string[] = [];
+
+  if (path.isAbsolute(clangdPath)) {
+    pathEntries.push(path.dirname(clangdPath));
+  }
+
+  pathEntries.push(...extraPaths);
+
+  const currentPath = process.env.PATH ?? "";
+  pathEntries.push(...currentPath.split(":").filter(Boolean));
+
+  const uniqueEntries = Array.from(new Set(pathEntries.filter(Boolean)));
+  return uniqueEntries.length > 0 ? uniqueEntries.join(":") : undefined;
+}
+
 export class ClangdManager {
   private client: LanguageClient | undefined;
   private readonly output = new ClangdOutputChannel(vscode.window.createOutputChannel("OpenBMC Jump"));
@@ -492,6 +532,7 @@ export class ClangdManager {
 
     // Auto-detect cross-compiler for --query-driver
     const extraEnv: Record<string, string> = {};
+    const extraPaths: string[] = [];
     const manualQueryDriver = vscode.workspace
       .getConfiguration("openbmcJump")
       .get<string>("clangd.queryDriver", "")
@@ -503,9 +544,14 @@ export class ClangdManager {
       if (crossInfo) {
         args.push(`--query-driver=${crossInfo.compilerGlob}`);
         if (crossInfo.extraPaths.length > 0) {
-          extraEnv.PATH = `${crossInfo.extraPaths.join(":")}:${process.env.PATH ?? ""}`;
+          extraPaths.push(...crossInfo.extraPaths);
         }
       }
+    }
+
+    const serverEnvPath = buildServerEnvPath(clangdPath, extraPaths);
+    if (serverEnvPath) {
+      extraEnv.PATH = serverEnvPath;
     }
 
     const serverOptions: ServerOptions = {

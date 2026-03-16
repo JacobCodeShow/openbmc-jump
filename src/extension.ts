@@ -19,6 +19,32 @@ const compileDbMatchCache = new Map<string, string>();
 let manualCompileDbLock: string | undefined;
 let autoSwitchPromise: Promise<void> | undefined;
 
+function isDebugLoggingEnabled(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("debugLogging", false);
+}
+
+function debugRuntime(message: string): void {
+  if (!isDebugLoggingEnabled()) {
+    return;
+  }
+  runtimeOutput.appendLine(message);
+}
+
+async function toggleDebugLogging(): Promise<void> {
+  const config = vscode.workspace.getConfiguration("openbmcJump");
+  const enabled = config.get<boolean>("debugLogging", false);
+  await config.update("debugLogging", !enabled, vscode.ConfigurationTarget.Workspace);
+
+  if (!enabled) {
+    runtimeOutput.appendLine("[debug] verbose debug logging enabled");
+    runtimeOutput.show(true);
+  }
+
+  void vscode.window.showInformationMessage(
+    !enabled ? "OpenBMC Jump debug logging enabled." : "OpenBMC Jump debug logging disabled."
+  );
+}
+
 type CompileDbPick = {
   label: string;
   description: string;
@@ -50,6 +76,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(vscode.commands.registerCommand("openbmcJump.showMetrics", () => {
       metrics.show();
+    }));
+
+  context.subscriptions.push(vscode.commands.registerCommand("openbmcJump.toggleDebugLogging", async () => {
+      await toggleDebugLogging();
     }));
 
   context.subscriptions.push(vscode.commands.registerCommand("openbmcJump.showActiveCompileDb", () => {
@@ -236,7 +266,7 @@ function warmupClangdForCppEditors(context: vscode.ExtensionContext): void {
     void maybeAutoSwitchCompileDb(context, document).finally(() => {
       void manager.ensureClient(context, true).catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
-        runtimeOutput.appendLine(`[warmup] skipped: ${msg}`);
+        debugRuntime(`[warmup] skipped: ${msg}`);
       });
     });
   };
@@ -306,7 +336,7 @@ async function safeProviderNavigation(
     return await performNavigation(context, kind, document, position, false, false, true, false);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    runtimeOutput.appendLine(`[provider] ${kind} failed: ${msg}`);
+    debugRuntime(`[provider] ${kind} failed: ${msg}`);
     if (isStartFailureCooldownError(err)) {
       return [];
     }
@@ -594,8 +624,7 @@ async function maybeAutoSwitchCompileDb(
   autoSwitchPromise = (async () => {
     const packageName = inferPackageName(document.uri.fsPath);
     if (packageName) {
-      runtimeOutput.appendLine(`find package name : ${packageName}`);
-      console.log(`find package name : ${packageName}`);
+      debugRuntime(`[auto-switch] package name: ${packageName}`);
     }
     const currentDiagnosis = diagnoseFileAgainstCompileDb(document.uri.fsPath);
     if (currentDiagnosis.exactMatches.length > 0 || currentDiagnosis.realpathMatches.length > 0) {
@@ -608,7 +637,7 @@ async function maybeAutoSwitchCompileDb(
     if (packageName) {
       const nearbyCompileDb = findCompileDbFromCurrentPackage(document.uri.fsPath, packageName);
       if (nearbyCompileDb) {
-        runtimeOutput.appendLine(`[auto-switch] package root compile_commands -> ${nearbyCompileDb}`);
+        debugRuntime(`[auto-switch] package root compile_commands -> ${nearbyCompileDb}`);
 
         await vscode.workspace
           .getConfiguration("openbmcJump")
@@ -620,14 +649,14 @@ async function maybeAutoSwitchCompileDb(
           await manager.restart(context);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          runtimeOutput.appendLine(`[auto-switch] restart failed: ${msg}`);
+          debugRuntime(`[auto-switch] restart failed: ${msg}`);
         }
         return;
       }
 
       const tmpWorkCompileDb = findCompileDbFromBuildTmpWork(document.uri.fsPath, packageName);
       if (tmpWorkCompileDb) {
-        runtimeOutput.appendLine(`[auto-switch] tmp/work compile_commands -> ${tmpWorkCompileDb}`);
+        debugRuntime(`[auto-switch] tmp/work compile_commands -> ${tmpWorkCompileDb}`);
 
         await vscode.workspace
           .getConfiguration("openbmcJump")
@@ -639,7 +668,7 @@ async function maybeAutoSwitchCompileDb(
           await manager.restart(context);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          runtimeOutput.appendLine(`[auto-switch] restart failed: ${msg}`);
+          debugRuntime(`[auto-switch] restart failed: ${msg}`);
         }
         return;
       }
@@ -668,13 +697,13 @@ async function maybeAutoSwitchCompileDb(
         .update("compileCommands.path", candidate, vscode.ConfigurationTarget.Workspace);
 
       compileDbMatchCache.set(directoryKey, candidate);
-      runtimeOutput.appendLine(`[auto-switch] compile_commands -> ${candidate}`);
+      debugRuntime(`[auto-switch] compile_commands -> ${candidate}`);
 
       try {
         await manager.restart(context);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        runtimeOutput.appendLine(`[auto-switch] restart failed: ${msg}`);
+        debugRuntime(`[auto-switch] restart failed: ${msg}`);
       }
       return;
     }
@@ -685,20 +714,19 @@ async function maybeAutoSwitchCompileDb(
         .update("compileCommands.path", packageFallbackCandidate, vscode.ConfigurationTarget.Workspace);
 
       compileDbMatchCache.set(directoryKey, packageFallbackCandidate);
-      runtimeOutput.appendLine(`find package name : ${packageName}`);
-      runtimeOutput.appendLine(`[auto-switch] compile_commands -> ${packageFallbackCandidate}`);
-      console.log(`find package name : ${packageName}`);
+      debugRuntime(`[auto-switch] package name: ${packageName}`);
+      debugRuntime(`[auto-switch] compile_commands -> ${packageFallbackCandidate}`);
 
       try {
         await manager.restart(context);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        runtimeOutput.appendLine(`[auto-switch] restart failed: ${msg}`);
+        debugRuntime(`[auto-switch] restart failed: ${msg}`);
       }
       return;
     }
 
-    runtimeOutput.appendLine(`[auto-switch] no matching compile_commands for ${document.uri.fsPath}`);
+    debugRuntime(`[auto-switch] no matching compile_commands for ${document.uri.fsPath}`);
   })().finally(() => {
     autoSwitchPromise = undefined;
   });
@@ -774,20 +802,20 @@ async function performNavigation(
     let locations: vscode.Location[];
 
     try {
-      locations = await requestNavigation(client, kind, document, position, timeoutMs, (msg) => runtimeOutput.appendLine(msg));
+      locations = await requestNavigation(client, kind, document, position, timeoutMs, debugRuntime);
     } catch (err) {
       if (isNavigationTimeoutError(err)) {
         const retryTimeoutMs = Math.max(timeoutMs * 2, 15000);
-        runtimeOutput.appendLine(
+        debugRuntime(
           `[nav] request timed out after ${timeoutMs}ms, retrying once with ${retryTimeoutMs}ms`
         );
-        locations = await requestNavigation(client, kind, document, position, retryTimeoutMs, (msg) => runtimeOutput.appendLine(msg));
+        locations = await requestNavigation(client, kind, document, position, retryTimeoutMs, debugRuntime);
       } else {
       if (!allowRestart || !isClientNotRunningError(err)) {
         throw err;
       }
       client = await manager.restart(context);
-      locations = await requestNavigation(client, kind, document, position, timeoutMs, (msg) => runtimeOutput.appendLine(msg));
+      locations = await requestNavigation(client, kind, document, position, timeoutMs, debugRuntime);
       }
     }
 
@@ -827,11 +855,11 @@ function logZeroResult(
   const wordRange = document.getWordRangeAtPosition(position);
   const symbol = wordRange ? document.getText(wordRange) : "<unknown>";
   const resolution = resolveCompileDb();
-  runtimeOutput.appendLine(
+  debugRuntime(
     `[no-result] op=${kind} symbol=${symbol} file=${document.uri.fsPath} line=${position.line + 1} compileDb=${resolution.compileCommandsPath ?? "<not found>"}`
   );
   if (resolution.issue) {
-    runtimeOutput.appendLine(`[no-result] issue=${resolution.issue}`);
+    debugRuntime(`[no-result] issue=${resolution.issue}`);
   }
 }
 
