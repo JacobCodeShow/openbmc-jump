@@ -264,6 +264,96 @@ function isDebugLoggingEnabled(): boolean {
   return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("debugLogging", false);
 }
 
+function shouldShowVariableTypeHints(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("inlayHints.showVariableTypes", true);
+}
+
+function shouldShowReturnTypeHints(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("inlayHints.showReturnTypes", true);
+}
+
+function shouldShowParameterHints(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("inlayHints.showParameterNames", true);
+}
+
+function shouldShowOtherTypeHints(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("inlayHints.showOtherTypes", true);
+}
+
+function shouldShowOtherHints(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("inlayHints.showOtherHints", true);
+}
+
+function isLowMemoryModeEnabled(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("clangd.lowMemoryMode", false);
+}
+
+function isBackgroundIndexEnabled(): boolean {
+  return vscode.workspace.getConfiguration("openbmcJump").get<boolean>("clangd.backgroundIndex", true);
+}
+
+function getClangdWorkerCount(): number {
+  const configured = vscode.workspace.getConfiguration("openbmcJump").get<number>("clangd.workerCount", 0);
+  if (!Number.isFinite(configured)) {
+    return 0;
+  }
+
+  const normalized = Math.max(0, Math.floor(configured));
+  if (normalized > 0) {
+    return normalized;
+  }
+
+  return isLowMemoryModeEnabled() ? 1 : 0;
+}
+
+function getInlayHintLabelText(label: string | vscode.InlayHintLabelPart[]): string {
+  if (typeof label === "string") {
+    return label;
+  }
+
+  return label.map((part: vscode.InlayHintLabelPart) => part.value).join("");
+}
+
+function filterInlayHints(items: vscode.InlayHint[] | null | undefined): vscode.InlayHint[] | null | undefined {
+  if (!items) {
+    return items;
+  }
+
+  const showVariableTypes = shouldShowVariableTypeHints();
+  const showReturnTypes = shouldShowReturnTypeHints();
+  const showParameterHints = shouldShowParameterHints();
+  const showOtherTypeHints = shouldShowOtherTypeHints();
+  const showOtherHints = shouldShowOtherHints();
+  if (showVariableTypes && showReturnTypes && showParameterHints && showOtherTypeHints && showOtherHints) {
+    return items;
+  }
+
+  return items.filter((item) => {
+    if (item.kind === vscode.InlayHintKind.Parameter) {
+      return showParameterHints;
+    }
+
+    if (item.kind !== vscode.InlayHintKind.Type) {
+      return showOtherHints;
+    }
+
+    const label = getInlayHintLabelText(item.label);
+    if (!showReturnTypes && /^\s*->\s*/.test(label)) {
+      return false;
+    }
+
+    if (!showVariableTypes && /^\s*:\s*/.test(label)) {
+      return false;
+    }
+
+    if (/^\s*(->|:)\s*/.test(label)) {
+      return true;
+    }
+
+    return showOtherTypeHints;
+  });
+}
+
 class ClangdOutputChannel implements vscode.OutputChannel {
   public readonly name: string;
   private pendingLine = "";
@@ -525,7 +615,26 @@ export class ClangdManager {
       this.output.appendLine(`[info] compile_commands: ${compileDb.compileCommandsPath}`);
     }
 
-    const args = ["--header-insertion=never", "--background-index"];
+    const args = ["--header-insertion=never"];
+    const lowMemoryMode = isLowMemoryModeEnabled();
+    const backgroundIndexEnabled = isBackgroundIndexEnabled();
+    const workerCount = getClangdWorkerCount();
+
+    if (backgroundIndexEnabled) {
+      args.push("--background-index");
+    }
+
+    if (workerCount > 0) {
+      args.push(`-j=${workerCount}`);
+    }
+
+    if (lowMemoryMode) {
+      args.push("--malloc-trim", "--pch-storage=disk");
+      if (backgroundIndexEnabled) {
+        args.push("--background-index-priority=background");
+      }
+    }
+
     if (compileDb.workingDirectory) {
       args.push(`--compile-commands-dir=${compileDb.workingDirectory}`);
     }
@@ -588,14 +697,15 @@ export class ClangdManager {
         },
         provideInlayHints: async (document, viewPort, token, next) => {
           const items = await next(document, viewPort, token);
-          return this.commandMapper.rewriteInlayHints(items ?? undefined) ?? null;
+          const rewritten = this.commandMapper.rewriteInlayHints(items ?? undefined) ?? null;
+          return filterInlayHints(rewritten ?? undefined) ?? null;
         },
         resolveInlayHint: async (item, token, next) => {
           const resolved = await next(item, token);
           if (!resolved) {
             return item;
           }
-          return this.commandMapper.rewriteInlayHints([resolved])?.[0] ?? item;
+          return filterInlayHints(this.commandMapper.rewriteInlayHints([resolved]))?.[0] ?? item;
         },
         provideInlineCompletionItems: async (document, position, context, token, next) => {
           const items = await next(document, position, context, token);
